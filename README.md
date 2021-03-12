@@ -1,6 +1,8 @@
 # Perceiver - JAX (Flax)
 
 Implementation of [Perceiver](https://arxiv.org/abs/2103.03206) in JAX and Flax.
+Also includes [ReZero](https://arxiv.org/abs/2003.04887) in lieu of LayerNorm, given its 
+empirical benefits for very deep Transformers.
 
 # Install
 
