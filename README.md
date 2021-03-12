@@ -9,6 +9,7 @@ pip install perceiver-jax
 ```
 
 # Usage
+Be sure to also install the correct accelerated jaxlib for your hardware.
 
 ```python
 import jax
