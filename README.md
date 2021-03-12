@@ -22,7 +22,7 @@ from perceiver_jax import Perceiver
 model = Perceiver(
     n_fourier_features=6,
     depth=8,
-    n_latents=512,
+    n_latents=512,  # if input length is much smaller than this, reconsider using this architecture
     latent_n_heads=8,
     latent_head_features=64,
     cross_n_heads=2,
