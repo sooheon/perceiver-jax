@@ -8,8 +8,9 @@ Implementation of [Perceiver](https://arxiv.org/abs/2103.03206) in JAX and Flax.
 pip install perceiver-jax
 ```
 
-# Usage
 Be sure to also install the correct accelerated jaxlib for your hardware.
+
+# Usage
 
 ```python
 import jax
