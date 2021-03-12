@@ -36,6 +36,9 @@ input_batch = jax.random.normal(RNG, (1, 224 * 224, 3))
 y, variables = model.init_with_output({'params': RNG, 'dropout': RNG}, input_batch)
 ```
 
+You'll notice the parametrization is slightly simpler than with PyTorch, as you can infer 
+input feature dimension shapes in JAX.
+
 # Acknowledgements
 
 Thanks to [lucidrains](https://github.com/lucidrains/) and his PyTorch
