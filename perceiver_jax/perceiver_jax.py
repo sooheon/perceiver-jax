@@ -1,4 +1,3 @@
-import jax
 import jax.nn.initializers as init
 import jax.numpy as jnp
 from einops import rearrange, repeat
@@ -93,7 +92,8 @@ class Perceiver(nn.Module):
         x = rearrange(x, "b n ... -> b n (...)")
 
         for i in range(self.depth):
-            latent += ReZero()(
+            rz = ReZero(name=f"rezero_{i}")
+            latent += rz(
                 Attention(
                     name=f"cross_attn_{i}",
                     heads=self.cross_n_heads,
@@ -101,14 +101,14 @@ class Perceiver(nn.Module):
                     dropout=self.attn_dropout,
                 )(latent, x)
             )
-            latent += ReZero()(
+            latent += rz(
                 FeedForward(
                     name=f"cross_ff_{i}",
                     mult=self.ff_mult,
                     dropout=self.ff_dropout,
                 )(latent)
             )
-            latent += ReZero()(
+            latent += rz(
                 Attention(
                     name=f"latent_attn_{i}",
                     heads=self.latent_n_heads,
@@ -116,7 +116,7 @@ class Perceiver(nn.Module):
                     dropout=self.attn_dropout,
                 )(latent)
             )
-            latent += ReZero()(
+            latent += rz(
                 FeedForward(
                     name=f"latent_ff_{i}",
                     mult=self.ff_mult,
@@ -124,11 +124,3 @@ class Perceiver(nn.Module):
                 )(latent)
             )
         return latent
-
-
-model = Perceiver()
-
-RNG = jax.random.PRNGKey(42)
-input_batch = jax.random.normal(RNG, (1, 224 * 224, 3))
-
-y, variables = model.init_with_output({"params": RNG, "dropout": RNG}, input_batch)
