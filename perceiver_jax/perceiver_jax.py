@@ -83,10 +83,7 @@ class Perceiver(nn.Module):
         latents = self.param(
             "latents", init.normal(), (self.n_latents, dim * self.ff_mult)
         )
-        pos_emb = self.param(
-            "pos_emb", init.normal(), (self.n_latents, dim * self.ff_mult)
-        )
-        latent = repeat(latents + pos_emb, "n d -> b n d", b=bs)
+        latent = repeat(latents, "n d -> b n d", b=bs)
 
         x = fourier_encode(x, self.n_fourier_features)
         x = rearrange(x, "b n ... -> b n (...)")
