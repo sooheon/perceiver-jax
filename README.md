@@ -30,6 +30,7 @@ model = Perceiver(
     attn_dropout=0.,
     ff_mult=4,
     ff_dropout=0.,
+    tie_layer_weights=False,
 )
 
 RNG = jax.random.PRNGKey(42)

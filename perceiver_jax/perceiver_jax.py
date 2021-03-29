@@ -1,3 +1,4 @@
+from functools import partial
 import jax.nn.initializers as init
 import jax.numpy as jnp
 from einops import rearrange, repeat
@@ -76,6 +77,7 @@ class Perceiver(nn.Module):
     ff_mult: int = 4
     attn_dropout: float = 0.0
     ff_dropout: float = 0.0
+    tie_layer_weights=False
 
     @nn.compact
     def __call__(self, x):
@@ -88,36 +90,42 @@ class Perceiver(nn.Module):
         x = fourier_encode(x, self.n_fourier_features)
         x = rearrange(x, "b n ... -> b n (...)")
 
-        for i in range(self.depth):
-            rz = ReZero(name=f"rezero_{i}")
-            latent += rz(
-                Attention(
-                    name=f"cross_attn_{i}",
-                    heads=self.cross_n_heads,
-                    head_features=self.cross_head_features,
-                    dropout=self.attn_dropout,
-                )(latent, x)
-            )
-            latent += rz(
-                FeedForward(
-                    name=f"cross_ff_{i}",
-                    mult=self.ff_mult,
-                    dropout=self.ff_dropout,
-                )(latent)
-            )
-            latent += rz(
-                Attention(
-                    name=f"latent_attn_{i}",
-                    heads=self.latent_n_heads,
-                    head_features=self.latent_head_features,
-                    dropout=self.attn_dropout,
-                )(latent)
-            )
-            latent += rz(
-                FeedForward(
-                    name=f"latent_ff_{i}",
-                    mult=self.ff_mult,
-                    dropout=self.ff_dropout,
-                )(latent)
-            )
+        cross_attn = partial(
+            Attention,
+            name="cross_attn",
+            heads=self.cross_n_heads,
+            head_features=self.cross_head_features,
+            dropout=self.attn_dropout,
+        )
+        cross_ff = partial(
+            FeedForward, name="cross_ff", mult=self.ff_mult, dropout=self.ff_dropout
+        )
+        latent_attn = partial(
+            Attention,
+            name="latent_attn",
+            heads=self.latent_n_heads,
+            head_features=self.latent_head_features,
+            dropout=self.attn_dropout,
+        )
+        latent_ff = partial(
+            FeedForward, name="latent_ff", mult=self.ff_mult, dropout=self.ff_dropout
+        )
+        if self.tie_layer_weights:
+            ca = cross_attn()
+            cf = cross_ff()
+            la = latent_attn()
+            lf = latent_ff()
+            for i in range(self.depth):
+                rz = ReZero(name=f"rezero_{i}")
+                latent += rz(ca(latent, x))
+                latent += rz(cf(latent))
+                latent += rz(la(latent))
+                latent += rz(lf(latent))
+        else:
+            for i in range(self.depth):
+                rz = ReZero(name=f"rezero_{i}")
+                latent += rz(cross_attn(name=f"cross_attn_{i}")(latent, x))
+                latent += rz(cross_ff(name=f"cross_ff_{i}")(latent))
+                latent += rz(latent_attn(name=f"latent_attn_{i}")(latent))
+                latent += rz(latent_ff(name=f"latent_ff_{i}")(latent))
         return latent

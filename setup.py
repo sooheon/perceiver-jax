@@ -15,9 +15,5 @@ setup(
         "transformer",
         "attention mechanism",
     ],
-    install_requires=[
-        "einops>=0.3",
-        "jax>=0.2.10",
-        "flax>=0.3.2"
-    ],
+    install_requires=["einops>=0.3", "jax>=0.2.10", "flax>=0.3.2"],
 )
