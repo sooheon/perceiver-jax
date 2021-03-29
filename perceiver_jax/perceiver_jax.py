@@ -77,7 +77,7 @@ class Perceiver(nn.Module):
     ff_mult: int = 4
     attn_dropout: float = 0.0
     ff_dropout: float = 0.0
-    tie_layer_weights=False
+    tie_layer_weights = False
 
     @nn.compact
     def __call__(self, x):
@@ -92,29 +92,22 @@ class Perceiver(nn.Module):
 
         cross_attn = partial(
             Attention,
-            name="cross_attn",
             heads=self.cross_n_heads,
             head_features=self.cross_head_features,
             dropout=self.attn_dropout,
         )
-        cross_ff = partial(
-            FeedForward, name="cross_ff", mult=self.ff_mult, dropout=self.ff_dropout
-        )
         latent_attn = partial(
             Attention,
-            name="latent_attn",
             heads=self.latent_n_heads,
             head_features=self.latent_head_features,
             dropout=self.attn_dropout,
         )
-        latent_ff = partial(
-            FeedForward, name="latent_ff", mult=self.ff_mult, dropout=self.ff_dropout
-        )
+        ff = partial(FeedForward, mult=self.ff_mult, dropout=self.ff_dropout)
         if self.tie_layer_weights:
-            ca = cross_attn()
-            cf = cross_ff()
-            la = latent_attn()
-            lf = latent_ff()
+            ca = cross_attn(name="cross_attn")
+            la = latent_attn(name="latent_attn")
+            cf = ff(name="cross_ff")
+            lf = ff(name="latent_ff")
             for i in range(self.depth):
                 rz = ReZero(name=f"rezero_{i}")
                 latent += rz(ca(latent, x))
@@ -125,7 +118,7 @@ class Perceiver(nn.Module):
             for i in range(self.depth):
                 rz = ReZero(name=f"rezero_{i}")
                 latent += rz(cross_attn(name=f"cross_attn_{i}")(latent, x))
-                latent += rz(cross_ff(name=f"cross_ff_{i}")(latent))
+                latent += rz(ff(name=f"cross_ff_{i}")(latent))
                 latent += rz(latent_attn(name=f"latent_attn_{i}")(latent))
-                latent += rz(latent_ff(name=f"latent_ff_{i}")(latent))
+                latent += rz(ff(name=f"latent_ff_{i}")(latent))
         return latent
